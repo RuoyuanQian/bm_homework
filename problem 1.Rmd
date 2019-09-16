@@ -1,0 +1,91 @@
+---
+title: "Homework_1"
+author: "Ruoyuan Qian"
+date: "2019/9/15"
+output: github_document
+---
+
+# Problem 1
+
+## a)
+
+I found that there are two rows of variable names which may cause some errors when reading the data into R. As a result, I use `skip=` to skip first row and read others into R.
+```{r Poblem1 a read data, message = FALSE,warning = FALSE}
+library(readxl)
+
+#raw_data <- read.table('C:\\Users\\hp\\Desktop\\Biostats\\homework\\Exercise 11.txt',header =TRUE,skip = 1)
+ raw_data<-read_excel("C:\\Users\\hp\\Desktop\\Biostats\\homework\\Exercise.xlsx",skip =1)
+ 
+#check variables and values in raw_data
+ str(raw_data)                
+ 
+#check if there is a missing value
+ anyNA(raw_data) 
+ 
+#only 3 kinds of race in the data
+ table(raw_data$Race)         
+```
+```{r Poblem1 a summary data}
+ library(dplyr)
+library(arsenal)
+
+#rename some values into a readable way 
+ fixed_data    <-     raw_data %>% mutate(
+         Group  =     recode(Group,  "0" = "Intervention", "1" = "Control"),
+         Gender =     recode(Gender, "1" = "male", "2" = "female"),
+         HTN    =     recode(HTN,    "0" = "no",   "1" = "yes"),
+         T2DM   =     recode(T2DM,   "0" = "no",   "1" = "yes"),
+         Smokes =     recode(Smokes, "0" = "no",   "1" = "yes"),
+         Depression = recode(Depression, "0" = "no", "1" = "yes"),
+         Race   =     recode(Race,   "1" = "African American", 
+                                     "2" = "Hispanic",
+                                     "3" = "African American"))
+
+#draw the descriptive table
+ sum_data  <-  arsenal::tableby(Group ~ Age + Gender + Race + Depression + Smokes + HTN+T2DM, 
+                       data  = fixed_data,
+                       test  = FALSE, 
+                       total = FALSE,
+                       numeric.stats = c("meansd" ,"median" ) )
+ summary(sum_data)
+                            
+```
+## b)
+
+### b) i
+```{r b) i}
+
+# merge BMI_PRE and BMI_POST into one column
+  a <- dplyr::select(fixed_data, c(Group,PRE...13 ))
+  b <- dplyr::select(fixed_data, c(Group,POST...14))
+  bmi_pre  <- rename(a,BMI=PRE...13 )
+  bmi_post <- rename(b,BMI=POST...14)
+  
+# add a new variable that helps to illustrate time status of BMI, either baseline or  post-measurement
+  len_pre  <- length(bmi_pre$Group)
+  len_post <- length(bmi_pre$Group)
+  data_b   <- rbind(cbind(bmi_pre, time=rep(0,len_pre )),
+                    cbind(bmi_post,time=rep(1,len_post)))
+  data_bmi <- data_b %>% mutate(
+              time = recode(time, "0" = "baseline", 
+                                  "1" = "post-measurement"))
+
+```
+
+### b) ii
+```{r b) ii}
+
+# draw side by side boxplot of BMI
+library(ggplot2)
+ library(dplyr)
+
+ggplot(data_bmi,aes(x = Group, y = BMI, color = time)) +
+   geom_boxplot()
+
+``` 
++
+   scale_fill_manual(values = c("blue", "red"), 
+                     labels  = expression("baseline", "post-measurement")) + 
+  labs(title="BMI comparing by Group",x="Group",y="BMI")
+a
+  ggsave("a.pdf")

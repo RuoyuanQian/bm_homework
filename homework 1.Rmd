@@ -1,0 +1,145 @@
+---
+title: "Homework_1"
+author: "Ruoyuan Qian"
+date: "2019/9/15"
+output: word_document
+---
+
+# Problem 1
+
+## a)
+
+I found that there are two rows of variable names which may cause some errors when reading the data into R. As a result, I use `skip=` to skip first row and read others into R.
+```{r Poblem1 a read data, message = FALSE,warning = FALSE}
+library(readxl)
+
+#raw_data <- read.table('C:\\Users\\hp\\Desktop\\Biostats\\homework\\Exercise 11.txt',header =TRUE,skip = 1)
+ raw_data<-read_excel("C:\\Users\\hp\\Desktop\\Biostats\\homework\\Exercise.xlsx",skip =1)
+ 
+#check variables and values in raw_data
+ str(raw_data)                
+ 
+#check if there is a missing value
+ anyNA(raw_data) 
+ 
+#only 3 kinds of race in the data
+ table(raw_data$Race)         
+```
+```{r Poblem1 a summary data}
+ library(dplyr)
+library(arsenal)
+
+#rename some values into a readable way 
+ fixed_data    <-     raw_data %>% mutate(
+         Group  =     recode(Group,  "0" = "Intervention", "1" = "Control"),
+         Gender =     recode(Gender, "1" = "male", "2" = "female"),
+         HTN    =     recode(HTN,    "0" = "no",   "1" = "yes"),
+         T2DM   =     recode(T2DM,   "0" = "no",   "1" = "yes"),
+         Smokes =     recode(Smokes, "0" = "no",   "1" = "yes"),
+         Depression = recode(Depression, "0" = "no", "1" = "yes"),
+         Race   =     recode(Race,   "1" = "African American", 
+                                     "2" = "Hispanic",
+                                     "3" = "African American"))
+
+#draw the descriptive table
+ sum_data  <-  arsenal::tableby(Group ~ Age + Gender + Race + Depression + Smokes + HTN+T2DM, 
+                       data  = fixed_data,
+                       test  = FALSE, 
+                       total = FALSE,
+                       numeric.stats = c("meansd" ,"median" ) )
+ summary(sum_data,text = TRUE)
+                            
+```
+
+## b)
+
+### b) i
+```{r b) i}
+
+# merge BMI_PRE and BMI_POST into one column
+  a <- dplyr::select(fixed_data, c(Group,PRE...13 ))
+  b <- dplyr::select(fixed_data, c(Group,POST...14))
+  bmi_pre  <- rename(a,BMI=PRE...13 )
+  bmi_post <- rename(b,BMI=POST...14)
+  
+# add a new variable that helps to illustrate time status of BMI, either baseline or  post-measurement
+  len_pre  <- length(bmi_pre$Group)
+  len_post <- length(bmi_pre$Group)
+  data_b   <- rbind(cbind(bmi_pre, time=rep(0,len_pre )),
+                    cbind(bmi_post,time=rep(1,len_post)))
+  data_bmi <- data_b %>% mutate(
+              time = recode(time, "0" = "baseline", 
+                                  "1" = "post-measurement"))
+ int_pre<-filter(data_bmi, Group=="Intervention" ,time=="baseline")
+ int_post<-filter(data_bmi, Group=="Intervention" ,time=="post-measurement")
+ con_pre<-filter(data_bmi, Group=="Control" ,time=="baseline")
+ con_post<-filter(data_bmi, Group=="Control" ,time=="post-measurement")
+
+ mean_int_pre<- mean( int_pre$BMI)
+ mean_int_post<- mean( int_post$BMI)
+ sd_int_pre<-sd(int_pre$BMI)
+ sd_int_post<-sd(int_post$BMI)
+ 
+ mean_con_pre<- mean( con_pre$BMI)
+ mean_con_post<- mean( con_post$BMI)
+ sd_con_pre<-sd(con_pre$BMI)
+ sd_con_post<-sd(con_post$BMI)
+
+ abs(max((mean_int_pre+sd_int_pre),(mean_int_post+sd_int_post))-
+       min((mean_int_pre-sd_int_pre),(mean_int_post-sd_int_post)))
+```
+
+
+### b) ii
+```{r b) ii}
+
+# draw side by side boxplot of BMI
+library(ggplot2)
+  ggplot(data_bmi,aes(x = Group, y = BMI, fill = time)) +
+   geom_boxplot() +
+   scale_fill_manual(values = c("blue", "red"), 
+                     labels  = expression("baseline", "post-measurement")) + 
+  xlab("") + 
+  ylab("BMI ") + 
+ theme(legend.position = "top", legend.title = element_blank())
+
+# merge DLD_PRE and DLD_POST into one column
+ a1 <- dplyr::select(fixed_data, c(Group,PRE...17 ))
+ b1 <- dplyr::select(fixed_data, c(Group,POST...18))
+ ldl_pre  <- rename( a1,LDL = PRE...17 )
+ ldl_post <- rename( b1,LDL = POST...18)
+ 
+# add a new variable that helps to illustrate time status of DLD, either baseline or  post-measurement
+ len_pre  <- length( ldl_pre$Group  )
+ len_post <- length( ldl_pre$Group  )
+ data_l   <- rbind(  cbind(ldl_pre,time=rep(0,len_pre)),
+                     cbind(ldl_post,time=rep(1,len_post)))
+ data_ldl <- data_l %>% mutate(
+             time = recode(time, "0" = "baseline", 
+                                 "1" = "post-measurement"))
+
+ # draw side by side boxplot of LDL
+ ggplot(data_ldl, 
+        aes(x = Group, y = LDL, fill = time)) +
+  geom_boxplot() + 
+ scale_fill_manual(values = c("blue", "red"),
+                     labels = expression("baseline", "post-measurement")) + 
+ xlab("") +
+  ylab("LDL ")  + 
+theme(legend.position = "top", legend.title = element_blank())
+```
+
+### b) iii
+
+As for the BMI in the study, in general, the values in intervention group are higher than the control group's while there is little difference of values within each group. 
+
+As for the LDL, for both groups, there is a trend that the values in post measurement are lower than the baseline's, and it is more obvious in control. Besides, in intervention , the values are more concentrated whereas values in control are more dispersed.
+
+
+## c) 
+
+It is an interventional clinical trial, and from the perspective of Demographics, the two groups are basically balanced, which is favorable for the study. However, there is some potential issues as well. For instance, the medians of baselines of BMI in two groups are of great difference, which may make the two groups incomparable. Besides, as for the LDL, the variances of two groups are extremely different, which may cause the similar problem like BMI. 
+
+# Problem 2
+
+The probability is The probability is`(0.6×0.001)/(0.6×0.001+0.05×0.999)=0.012`,
