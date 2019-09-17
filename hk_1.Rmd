@@ -129,29 +129,43 @@ for(i in 1:6){
   
     rname<-NULL
   for(i in row_name){
-      rname<-rbind(rname,i," "," ")
+      rname<-rbind(rname,i," ","delta")
   }
-  
 
-tibble(variable=rname,
+#group_1<-paste("Intervention","N=",count(filter(fixed_data,Group=="Intervention")))
+#group_2<-paste("Control","N=",count(filter(fixed_data,Group=="Control")))
+
+
+
+df_compare<-tibble(variable=rname,
        baseline_inter=baseline_inter,
        six_month_inter=six_month_inter,
        baseline_con=baseline_con,
        six_month_con=six_month_con
        )
 
+df<-tibble("Variable"=rname,
+       "Intervention,N=36"=baseline_inter,
+       "Intervention,N=36 "=six_month_inter,
+       "Control,N=36"=baseline_con,
+       "Control,N=36 "=six_month_con
+       )
 
+df_compare<-rbind(c(" ","baseline","six month","baseline","six month","baseline","six month"),df)
+             
+
+write.csv(df_compare, file="df_compare.csv")
+read.csv("df_compare.txt")
 
 ```
 
 
 ### b) ii
 ```{r b) ii}
-# merge BMI_PRE and BMI_POST into one column
-  a <- dplyr::select(fixed_data, c(Group,BMI_PRE ))
-  b <- dplyr::select(fixed_data, c(Group,BMI_POST))
-  bmi_pre  <- rename(a,BMI=BMI_PRE )
-  bmi_post <- rename(b,BMI=BMI_POST)
+  a <- dplyr::select(fixed_data, c(Group,PRE...13 ))
+  b <- dplyr::select(fixed_data, c(Group,POST...14))
+  bmi_pre  <- rename(a,BMI=PRE...13 )
+  bmi_post <- rename(b,BMI=POST...14)
   
 # add a new variable that helps to illustrate time status of BMI, either baseline or  post-measurement
   len_pre  <- length(bmi_pre$Group)
@@ -172,10 +186,10 @@ library(ggplot2)
  theme(legend.position = "top", legend.title = element_blank())
 
 # merge DLD_PRE and DLD_POST into one column
- a1 <- dplyr::select(fixed_data, c(Group,LDL_PRE ))
- b1 <- dplyr::select(fixed_data, c(Group,LDL_POST))
- ldl_pre  <- rename( a1,LDL = LDL_PRE  )
- ldl_post <- rename( b1,LDL = LDL_POST)
+ a1 <- dplyr::select(fixed_data, c(Group,PRE...17 ))
+ b1 <- dplyr::select(fixed_data, c(Group,POST...18))
+ ldl_pre  <- rename( a1,LDL = PRE...17  )
+ ldl_post <- rename( b1,LDL = POST...18)
  
 # add a new variable that helps to illustrate time status of DLD, either baseline or  post-measurement
  len_pre  <- length( ldl_pre$Group  )
